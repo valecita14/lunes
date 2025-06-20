@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuarios desde MongoDB</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { padding: 8px 12px; border: 1px solid #ccc; }
+    th { background-color: #f4f4f4; }
+    input, button { padding: 8px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>Lista de Usuarios</h1>
+
+  <!-- Formulario para agregar usuario -->
+  <h2>Agregar Usuario</h2>
+  <form id="usuario-form">
+    <input type="text" id="nombre" placeholder="Nombre" required>
+    <input type="email" id="correo" placeholder="Correo" required>
+    <button type="submit">Agregar</button>
+  </form>
+
+  <!-- Tabla de usuarios -->
+  <table id="usuarios-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Aquí se insertarán los usuarios -->
+    </tbody>
+  </table>
+
+  <script>
+    const apiUrl = 'http://localhost:8081/api/usuarios';
+
+    // Función para obtener usuarios
+    function cargarUsuarios() {
+      fetch(apiUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error al cargar los datos');
+          }
+          return response.json();
+        })
+        .then(data => {
+          const tbody = document.querySelector('#usuarios-table tbody');
+          tbody.innerHTML = ''; // Limpia la tabla
+          data.forEach(usuario => {
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+              <td>${usuario.id}</td>
+              <td>${usuario.nombre}</td>
+              <td>${usuario.correo}</td>
+              <td><button onclick="eliminarUsuario('${usuario.id}')">Eliminar</button></td>
+            `;
+            tbody.appendChild(fila);
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Función para agregar usuario
+    document.getElementById('usuario-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nuevoUsuario = {
+        nombre: document.getElementById('nombre').value,
+        correo: document.getElementById('correo').value
+      };
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(nuevoUsuario)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Error al agregar');
+        return res.json();
+      })
+      .then(() => {
+        alert('Usuario agregado');
+        cargarUsuarios();
+        document.getElementById('usuario-form').reset();
+      })
+      .catch(err => console.error('Error:', err));
+    });
+
+    // Función para eliminar usuario
+    function eliminarUsuario(id) {
+      if (confirm('¿Deseas eliminar este usuario?')) {
+        fetch(`${apiUrl}/${id}`, {
+          method: 'DELETE'
+        })
+        .then(() => {
+          alert('Usuario eliminado');
+          cargarUsuarios();
+        })
+        .catch(err => console.error('Error al eliminar:', err));
+      }
+    }
+
+    // Cargar usuarios al iniciar
+    cargarUsuarios();
+  </script>
+</body>
+</html>
